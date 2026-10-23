@@ -947,7 +947,7 @@ class Group extends _AbstractComponent__WEBPACK_IMPORTED_MODULE_0__["default"] {
             }
             for (let j = 0; j < groups.length; j++) {
               const element = groups[j];
-              element.style.visibility = i === j ? "visible" : "hidden";
+              element.style.visibility = i === j ? "inherit" : "hidden";
             }
             for (let j = 0; j < this.tabs.children.length; j++) {
               const e = this.tabs.children[j];
