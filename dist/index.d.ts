@@ -510,6 +510,7 @@ declare abstract class AbstractItem$1 implements IItem {
 	type: FaustUIInputType | FaustUIOutputType;
 	label: string;
 	address: string;
+	shortname: string;
 	url: string;
 	index: number;
 	init: number;
