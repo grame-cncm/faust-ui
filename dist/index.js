@@ -1496,6 +1496,17 @@ const _AbstractItem = class _AbstractItem extends _AbstractComponent__WEBPACK_IM
     return +(min + steps * step).toFixed(Math.max((0,_utils__WEBPACK_IMPORTED_MODULE_1__.decimals)(step), (0,_utils__WEBPACK_IMPORTED_MODULE_1__.decimals)(min)));
   }
   /**
+   * The value as displayed, with 3 decimals or more when the step is finer (0.0001)
+   * or the range smaller than 1 (a bargraph from 0 to 0.001), without trailing zeros
+   */
+  get displayValue() {
+    const { value, step, min, max } = this.state;
+    const range = max - min;
+    const rangeDecimals = range > 0 && range < 1 ? 3 - Math.floor(Math.log10(range)) : 0;
+    const fixed = value.toFixed(Math.min(10, Math.max(3, step ? (0,_utils__WEBPACK_IMPORTED_MODULE_1__.decimals)(step) : 0, rangeDecimals)));
+    return `${+fixed}`.includes("e") ? fixed.replace(/\.?0+$/, "") : `${+fixed}`;
+  }
+  /**
    * Use this method if you want the emitter to send value to DSP
    */
   setValue(valueIn) {
@@ -1898,7 +1909,8 @@ class Group extends _AbstractComponent__WEBPACK_IMPORTED_MODULE_0__["default"] {
     if (!metaIn) return { metaObject };
     metaIn.forEach((m) => Object.assign(metaObject, m));
     if (metaObject.style) {
-      const enumsRegex = /\{\s*(?:['_\-](.+?)['_\-]\s*:\s*([-+]?[0-9]*\.?[0-9]+)\s*;\s*)+(?:['_\-](.+?)['_\-]\s*:\s*([-+]?[0-9]*\.?[0-9]+))\s*\}/;
+      const entry = String.raw`['_\-].+?['_\-]\s*:\s*[-+]?[0-9]*\.?[0-9]+\s*`;
+      const enumsRegex = new RegExp(String.raw`\{\s*${entry}(?:;\s*${entry})*;?\s*\}`);
       const matched = metaObject.style.match(enumsRegex);
       if (matched) {
         const itemsRegex = /['_\-](.+?)['_\-]\s*:\s*([-+]?[0-9]*\.?[0-9]+)\s*/g;
@@ -2401,7 +2413,7 @@ class Knob extends _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"] {
     this.ctx = this.canvas.getContext("2d");
     this.inputNumber = document.createElement("input");
     this.inputNumber.type = "number";
-    this.inputNumber.value = (+this.state.value.toFixed(3)).toString();
+    this.inputNumber.value = this.displayValue;
     this.inputNumber.max = this.state.max.toString();
     this.inputNumber.min = this.state.min.toString();
     this.inputNumber.step = this.state.step.toString();
@@ -2422,7 +2434,7 @@ class Knob extends _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"] {
     });
     this.on("label", () => this.schedule(this.paintLabel));
     const valueChange = () => {
-      this.inputNumber.value = (+this.state.value.toFixed(3)).toString();
+      this.inputNumber.value = this.displayValue;
       this.input.value = this.inputNumber.value + (this.state.unit || "");
     };
     this.on("value", () => {
@@ -2788,7 +2800,7 @@ class Nentry extends _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"] {
     super.componentWillMount();
     this.input = document.createElement("input");
     this.input.type = "number";
-    this.input.value = (+this.state.value.toFixed(3)).toString();
+    this.input.value = this.displayValue;
     this.input.max = this.state.max.toString();
     this.input.min = this.state.min.toString();
     this.input.step = this.state.step.toString();
@@ -2800,7 +2812,7 @@ class Nentry extends _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"] {
     this.input.addEventListener("change", this.handleChange);
     this.on("style", () => this.schedule(this.setStyle));
     this.on("label", () => this.schedule(this.paintLabel));
-    const valueChange = () => this.input.value = (+this.state.value.toFixed(3)).toString();
+    const valueChange = () => this.input.value = this.displayValue;
     this.on("value", () => this.schedule(valueChange));
     const maxChange = () => this.input.max = this.state.max.toString();
     this.on("max", () => this.schedule(maxChange));
@@ -2883,7 +2895,7 @@ class Numerical extends _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"] {
     super.componentWillMount();
     this.input = document.createElement("input");
     this.input.disabled = true;
-    this.input.value = (+this.state.value.toFixed(3)).toString() + (this.state.unit || "");
+    this.input.value = this.displayValue + (this.state.unit || "");
     this.setStyle();
     return this;
   }
@@ -2891,7 +2903,7 @@ class Numerical extends _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"] {
     super.componentDidMount();
     this.on("style", () => this.schedule(this.setStyle));
     this.on("label", () => this.schedule(this.paintLabel));
-    const valueChange = () => this.input.value = (+this.state.value.toFixed(3)).toString() + (this.state.unit || "");
+    const valueChange = () => this.input.value = this.displayValue + (this.state.unit || "");
     this.on("value", () => this.schedule(valueChange));
     return this;
   }
@@ -3266,7 +3278,7 @@ class VBargraph extends _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"] {
     this.ctx = this.canvas.getContext("2d");
     this.input = document.createElement("input");
     this.input.disabled = true;
-    this.input.value = (+this.state.value.toFixed(3)).toString() + (this.state.unit || "");
+    this.input.value = this.displayValue + (this.state.unit || "");
     this.setStyle();
     return this;
   }
@@ -3278,7 +3290,7 @@ class VBargraph extends _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"] {
       this.schedule(this.paint);
     });
     this.on("label", () => this.schedule(this.paintLabel));
-    const valueChange = () => this.input.value = (+this.state.value.toFixed(3)).toString() + (this.state.unit || "");
+    const valueChange = () => this.input.value = this.displayValue + (this.state.unit || "");
     this.on("value", () => {
       this.schedule(valueChange);
       this.schedule(this.paint);
@@ -3427,7 +3439,7 @@ class VSlider extends _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"] {
     this.ctx = this.canvas.getContext("2d");
     this.inputNumber = document.createElement("input");
     this.inputNumber.type = "number";
-    this.inputNumber.value = (+this.state.value.toFixed(3)).toString();
+    this.inputNumber.value = this.displayValue;
     this.inputNumber.max = this.state.max.toString();
     this.inputNumber.min = this.state.min.toString();
     this.inputNumber.step = this.state.step.toString();
@@ -3448,7 +3460,7 @@ class VSlider extends _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"] {
     });
     this.on("label", () => this.schedule(this.paintLabel));
     const valueChange = () => {
-      this.inputNumber.value = (+this.state.value.toFixed(3)).toString();
+      this.inputNumber.value = this.displayValue;
       this.input.value = this.inputNumber.value + (this.state.unit || "");
     };
     this.on("value", () => {

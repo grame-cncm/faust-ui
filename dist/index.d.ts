@@ -188,6 +188,11 @@ declare abstract class AbstractItem<T extends FaustUIItemStyle> extends Abstract
 	 */
 	toValidNumber(value: number): number;
 	/**
+	 * The value as displayed, with 3 decimals or more when the step is finer (0.0001)
+	 * or the range smaller than 1 (a bargraph from 0 to 0.001), without trailing zeros
+	 */
+	get displayValue(): string;
+	/**
 	 * Use this method if you want the emitter to send value to DSP
 	 */
 	setValue(valueIn: number): boolean;
