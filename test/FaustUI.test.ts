@@ -5,6 +5,8 @@ import FaustUI from "../src/FaustUI";
 import Group from "../src/components/Group";
 import Menu from "../src/components/Menu";
 import Nentry from "../src/components/Nentry";
+import Layout from "../src/layout/Layout";
+import type AbstractGroup from "../src/layout/AbstractGroup";
 import { fakeContext2D, group, hslider, isShown, nentry, nextFrames, parts } from "./helpers";
 import { sequencer } from "./fixtures";
 
@@ -226,5 +228,43 @@ describe("FaustUI.destroy", () => {
         const faustUI = createUI(sequencer(), true, true);
         faustUI.destroy();
         expect(() => faustUI.destroy()).not.toThrow();
+    });
+});
+
+describe("FaustUI.unregister", () => {
+    it("removes one component of a path, and the path with its last component", () => {
+        const faustUI = createUI([group("vgroup", "A", [hslider("x")]), group("vgroup", "B", [hslider("x")])]);
+        const [a, b] = faustUI.componentMap["/x"];
+        faustUI.unregister("/x", a);
+        expect(faustUI.componentMap["/x"]).toEqual([b]);
+        faustUI.unregister("/x", b);
+        expect(faustUI.componentMap).not.toHaveProperty("/x");
+        expect(() => faustUI.unregister("/unknown", a)).not.toThrow();
+    });
+
+    /**
+     * The laid out items of a `type` group holding `items`, to give to `setState`
+     */
+    const laidOut = (type: "vgroup" | "tgroup", items: FaustUIItem[]) => (Layout.calc([group(type, "G", items)]).items[0] as AbstractGroup).items as any;
+
+    it("is called for the widgets a group replaces, nested ones too", async () => {
+        const faustUI = createUI(sequencer());
+        const { Sequencer } = tgroups(faustUI);
+        const room = faustUI.componentMap["/room"][0];
+        Sequencer.setState({ items: laidOut("tgroup", [group("vgroup", "X", [hslider("x")]), group("vgroup", "Y", [nentry("y")])]) });
+        await nextFrames();
+        expect(Object.keys(faustUI.componentMap).sort()).toEqual(["/x", "/y"]);
+        // The DSP no longer updates the replaced widgets
+        faustUI.paramChangeByDSP("/room", 2);
+        expect(room.state.value).toBe(0);
+    });
+
+    it("keeps the widgets of the same path elsewhere in the UI", async () => {
+        const faustUI = createUI([group("vgroup", "A", [hslider("x")]), group("vgroup", "B", [hslider("x")])]);
+        const [a, b] = faustUI.faustUIRoot.children as Group[];
+        a.setState({ items: laidOut("vgroup", [nentry("n")]) });
+        await nextFrames();
+        expect(faustUI.componentMap["/x"]).toEqual([b.children[0]]);
+        expect(faustUI.componentMap["/n"]).toHaveLength(1);
     });
 });

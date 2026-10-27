@@ -261,6 +261,16 @@ export default class Group extends AbstractComponent<FaustUIGroupProps> {
         return this;
     }
     /**
+     * Unregister the widgets of this group and of its subgroups from the emitter, before they are replaced
+     */
+    unregisterChildren() {
+        this.children.forEach((item) => {
+            if (item instanceof Group) item.unregisterChildren();
+            else this.state.emitter?.unregister(item.state.address, item);
+        });
+        return this;
+    }
+    /**
      * Append the tab bar and the children after the label: the tab click handler counts on this order
      */
     mountChildren() {
@@ -296,6 +306,7 @@ export default class Group extends AbstractComponent<FaustUIGroupProps> {
         this.on("style", () => this.schedule(handleResize));
         const itemsChange = () => {
             // Replace the old children in the DOM, and mount the new ones as at first mount
+            this.unregisterChildren();
             this.children.forEach(item => item.container.remove());
             this.tabs.remove();
             this.updateUI();

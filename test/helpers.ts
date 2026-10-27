@@ -41,6 +41,11 @@ export const fakeEmitter = () => {
         componentMap,
         changes,
         register: (path: string, item: any) => (componentMap[path] = componentMap[path] || []).push(item),
+        unregister: (path: string, item: any) => {
+            const remaining = (componentMap[path] || []).filter(i => i !== item);
+            if (remaining.length) componentMap[path] = remaining;
+            else delete componentMap[path];
+        },
         paramChangeByUI: (path: string, value: number) => changes.push({ path, value })
     };
 };

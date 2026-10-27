@@ -103,6 +103,16 @@ export default class FaustUI {
         else this.componentMap[path] = [item];
     }
     /**
+     * Called by groups for the components they remove, so that the DSP no longer updates them.
+     */
+    unregister(path: string, item: AbstractItem<any>) {
+        const items = this.componentMap[path];
+        if (!items) return;
+        const remaining = items.filter(i => i !== item);
+        if (remaining.length) this.componentMap[path] = remaining;
+        else delete this.componentMap[path];
+    }
+    /**
      * Notify the component to change its value.
      */
     paramChangeByDSP(path: string, value: number) {
