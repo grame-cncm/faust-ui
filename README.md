@@ -131,6 +131,27 @@ npm run dist
 ```
 To test, put the directory in a local server, then open the following page: `./dist/test.html`
 
+## Testing
+The tests use [Vitest](https://vitest.dev) in two projects: `unit`, the layout, the components and `FaustUI` in Node with jsdom (`./test`), and `browser`, the rendered UI and the pointer interactions in a headless Chromium driven by Playwright (`./test/browser`).
+
+The browser tests need Chromium, installed once with:
+
+```bash
+npx playwright install chromium
+```
+
+Run all the tests:
+
+```bash
+npm test
+```
+
+Run them with a coverage report of the sources, printed and written to `./coverage/index.html`:
+
+```bash
+npm run coverage
+```
+
 ## Versioning 
 You'll have to raise the package version number in `package.json` for `npm run update` to properly work.
 

@@ -3,6 +3,13 @@ import { playwright } from "@vitest/browser-playwright";
 
 export default defineConfig({
     test: {
+        // `npm run coverage`: what the unit and browser tests run of the sources
+        coverage: {
+            provider: "v8",
+            include: ["src/**/*.ts"],
+            exclude: ["src/**/*.d.ts"],
+            reporter: ["text-summary", "text", "html"]
+        },
         projects: [
             {
                 test: {
