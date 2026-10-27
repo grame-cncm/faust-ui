@@ -158,9 +158,9 @@ export default class VSlider extends AbstractItem<FaustUISliderStyle> {
     };
     get stepsCount() {
         const { type, max, min, step, enums } = this.state;
-        const maxSteps = type === "enum" ? enums.length : type === "int" ? max - min : (max - min) / step;
+        const maxSteps = type === "enum" ? AbstractItem.enumSteps(enums) : type === "int" ? max - min : (max - min) / step;
         if (step) {
-            if (type === "enum") return enums.length;
+            if (type === "enum") return AbstractItem.enumSteps(enums);
             if (type === "int") return Math.min(Math.floor((max - min) / (Math.round(step) || 0)), maxSteps);
             return countSteps(max - min, step);
         }

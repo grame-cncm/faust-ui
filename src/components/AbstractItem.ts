@@ -314,9 +314,9 @@ export default abstract class AbstractItem<T extends FaustUIItemStyle> extends A
      */
     get stepsCount() {
         const { type, max, min, step, enums } = this.state;
-        const maxSteps = type === "enum" ? enums.length : type === "int" ? max - min : (max - min) / step;
+        const maxSteps = type === "enum" ? AbstractItem.enumSteps(enums) : type === "int" ? max - min : (max - min) / step;
         if (step) {
-            if (type === "enum") return enums.length;
+            if (type === "enum") return AbstractItem.enumSteps(enums);
             if (type === "int") return Math.min(Math.floor((max - min) / (Math.round(step) || 1)), maxSteps);
             return countSteps(max - min, step);
         }
@@ -329,9 +329,15 @@ export default abstract class AbstractItem<T extends FaustUIItemStyle> extends A
         const { type, max, min, value, enums, scale } = this.state;
         return AbstractItem.getDistance({ type, max, min, value, enums, scale });
     }
+    /**
+     * Number of steps between the entries of an enum, one less than its entries: `enums` is an object, it has no length
+     */
+    static enumSteps(enums: { [key: string]: number }) {
+        return Math.max(0, Object.keys(enums || {}).length - 1);
+    }
     static getDistance(state: { value: number; min: number; max: number; enums?: { [key: string]: number }; type: "enum" | "int" | "float"; scale: "linear" | "exp" | "log" }) {
         const { type, max, min, value, enums, scale } = state;
-        if (type === "enum") return value / (enums.length - 1);
+        if (type === "enum") return value / (AbstractItem.enumSteps(enums) || 1);
         const v = scale === "exp" ? normLog(value, min, max) : scale === "log" ? normExp(value, min, max) : value;
         return normalize(v, min, max);
     }
