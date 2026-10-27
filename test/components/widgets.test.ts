@@ -110,8 +110,8 @@ describe("widgets", () => {
         const { get, emitter } = mountItems(soundfile("w"));
         const s = get<Soundfile>("/w");
         expect(s).toBeInstanceOf(Soundfile);
-        s.handleMouseOrTouchDown({ pointerId: 1, x: 0, y: 0, originalEvent: null });
-        s.handleMouseOrTouchUp({ pointerId: 1, x: 0, y: 0, originalEvent: null });
+        s.handleMouseOrTouchDown();
+        s.handleMouseOrTouchUp();
         expect(emitter.changes).toEqual([]);
     });
 

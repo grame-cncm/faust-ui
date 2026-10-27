@@ -112,7 +112,7 @@ describe("TGroup component", () => {
 
         it("switches the tabs of a root tgroup, which has no label", () => {
             const layout = new LayoutTGroup({ type: "tgroup", label: "", items: Layout.getItems([group("vgroup", "A", []), group("vgroup", "B", []), group("vgroup", "C", [])]) as AbstractGroup[] }, true);
-            layout.adjust().expand(0, 0).offset();
+            layout.adjust().expand().offset();
             const tgroup = new Group({
                 label: "",
                 type: "tgroup",

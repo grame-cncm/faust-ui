@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { FaustUIItem } from "@grame/faustwasm";
+import type { FaustUIItem, FaustUIMeta } from "@grame/faustwasm";
 import type Group from "../../src/components/Group";
 import type HSlider from "../../src/components/HSlider";
 import type Knob from "../../src/components/Knob";
@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 type Range = { init?: number; min: number; max: number; step: number };
-const item = (type: "hslider" | "nentry", { init = 0, min, max, step }: Range, meta?: FaustUIItem["meta"]) => ({ type, label: "p", address: "/p", index: 0, init, min, max, step, meta } as FaustUIItem);
+const item = (type: "hslider" | "nentry", { init = 0, min, max, step }: Range, meta?: FaustUIMeta[]) => ({ type, label: "p", address: "/p", index: 0, init, min, max, step, meta } as FaustUIItem);
 /**
  * Mounts one widget of `type` with `range`, in a vgroup
  */

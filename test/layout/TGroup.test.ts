@@ -132,7 +132,7 @@ describe("TGroup layout", () => {
                     group("vgroup", "Tall", [nentry("n1"), nentry("n2"), nentry("n3"), nentry("n4"), nentry("n5"), nentry("n6")])
                 ]) as AbstractGroup[]
             }, true);
-            return tgroup.adjust().expand(0, 0).offset();
+            return tgroup.adjust().expand().offset();
         };
 
         it("has no label height", () => {
