@@ -1,6 +1,9 @@
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
+// The modern Sass API: the legacy one is deprecated and will be removed in Dart Sass 2.0
+const sassLoader = { loader: "sass-loader", options: { api: "modern-compiler", sassOptions: { sourceMapIncludeSources: true } } };
+
 /** @type {import('webpack').Configuration} */
 const config = {
   entry: './src/index.ts',
@@ -27,7 +30,7 @@ const config = {
       },
       {
         test: /\.s[ac]ss$/,
-        use: ["style-loader", "css-loader", "sass-loader"]
+        use: ["style-loader", "css-loader", sassLoader]
       },
       {
         test: /\.css$/,
@@ -75,7 +78,7 @@ const esmConfig = {
       },
       {
         test: /\.s[ac]ss$/,
-        use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"]
+        use: [MiniCssExtractPlugin.loader, "css-loader", sassLoader]
       },
       {
         test: /\.css$/,
