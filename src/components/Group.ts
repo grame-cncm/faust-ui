@@ -32,7 +32,9 @@ export default class Group extends AbstractComponent<FaustUIGroupProps> {
         if (!metaIn) return { metaObject };
         metaIn.forEach(m => Object.assign(metaObject, m));
         if (metaObject.style) {
-            const enumsRegex = /\{\s*(?:['_\-](.+?)['_\-]\s*:\s*([-+]?[0-9]*\.?[0-9]+)\s*;\s*)+(?:['_\-](.+?)['_\-]\s*:\s*([-+]?[0-9]*\.?[0-9]+))\s*\}/;
+            // One entry or more, separated by ";", with an optional ";" after the last one
+            const entry = String.raw`['_\-].+?['_\-]\s*:\s*[-+]?[0-9]*\.?[0-9]+\s*`;
+            const enumsRegex = new RegExp(String.raw`\{\s*${entry}(?:;\s*${entry})*;?\s*\}`);
             const matched = metaObject.style.match(enumsRegex);
             if (matched) {
                 const itemsRegex = /['_\-](.+?)['_\-]\s*:\s*([-+]?[0-9]*\.?[0-9]+)\s*/g;
