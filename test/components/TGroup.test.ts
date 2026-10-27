@@ -4,6 +4,8 @@ import Group from "../../src/components/Group";
 import Menu from "../../src/components/Menu";
 import Nentry from "../../src/components/Nentry";
 import Layout from "../../src/layout/Layout";
+import type AbstractGroup from "../../src/layout/AbstractGroup";
+import type { FaustUIItem } from "@grame/faustwasm";
 import { button, fakeContext2D, group, hslider, isShown, knob, menu, mount, nentry, nextFrames, parts, vslider } from "../helpers";
 
 beforeEach(() => {
@@ -288,17 +290,62 @@ describe("TGroup component", () => {
             expect(tgroup.label.title).toBe("Renamed");
         });
 
-        // `itemsChange` rebuilds the tab headers and the children, but does not mount the new
-        // children: their containers never reach the DOM. FaustUI does not use it (a new UI
-        // mounts a new root group), so this documents the current behavior.
-        it.fails("replaces its tabs when its items change", async () => {
+        /**
+         * The laid out items of a group of `type` holding `items`, to give to `setState`
+         */
+        const laidOut = (type: "vgroup" | "tgroup", items: FaustUIItem[]) => (Layout.calc([group(type, "G", items)]).items[0] as AbstractGroup).items as any;
+
+        it("replaces its tabs when its items change", async () => {
             const { tgroup } = mountTGroup(simple());
-            const items = Layout.getItems([group("vgroup", "X", []), group("vgroup", "Y", [])]);
-            items.forEach(item => item.layout.offsetLeft = item.layout.offsetTop = 0);
-            tgroup.setState({ items: items as any });
+            const oldTabs = parts(tgroup).tabs;
+            parts(tgroup).headers[2].click();
+            tgroup.setState({ items: laidOut("tgroup", [group("vgroup", "X", []), group("vgroup", "Y", [])]) });
             await nextFrames();
-            expect(parts(tgroup).headers.map(h => h.innerText)).toEqual(["X", "Y"]);
-            parts(tgroup).tabs.forEach(tab => expect(tgroup.container.contains(tab)).toBe(true));
+            const { headers, tabs } = parts(tgroup);
+            expect(headers.map(h => h.innerText)).toEqual(["X", "Y"]);
+            expect(Array.from(tgroup.container.children)).toEqual([tgroup.label, tgroup.tabs, ...tabs]);
+            oldTabs.forEach(tab => expect(tgroup.container.contains(tab)).toBe(false));
+            // The first new tab is shown, and the headers switch the new tabs
+            expect(tabs.map(isShown)).toEqual([true, false]);
+            expect(headers.map(h => h.classList.contains("active"))).toEqual([true, false]);
+            headers[1].click();
+            expect(tabs.map(isShown)).toEqual([false, true]);
+        });
+
+        it("mounts the widgets of its new tabs", async () => {
+            const { tgroup, emitter } = mountTGroup(simple());
+            tgroup.setState({ items: laidOut("tgroup", [group("vgroup", "X", [hslider("x")]), group("vgroup", "Y", [menu("m")])]) });
+            await nextFrames();
+            const m = emitter.componentMap["/m"][0] as Menu;
+            expect(tgroup.container.contains(m.container)).toBe(true);
+            parts(tgroup).headers[1].click();
+            expect(isShown(m.container)).toBe(true);
+            // Mounted: it sends the values changed by the user and shows those of the DSP
+            m.select.value = "2";
+            m.select.dispatchEvent(new Event("change"));
+            expect(emitter.changes).toEqual([{ path: "/m", value: 2 }]);
+            m.setState({ value: 1 });
+            await nextFrames();
+            expect(m.select.selectedIndex).toBe(1);
+        });
+
+        it("removes its tab bar when its new items are empty", async () => {
+            const { tgroup } = mountTGroup(simple());
+            tgroup.setState({ items: [] });
+            await nextFrames();
+            expect(tgroup.children).toHaveLength(0);
+            expect(Array.from(tgroup.container.children)).toEqual([tgroup.label]);
+        });
+
+        it("replaces the widgets of a vgroup when its items change", async () => {
+            const { root, emitter } = mountTGroup([group("vgroup", "V", [hslider("a"), hslider("b")])]);
+            const vgroup = root.children[0] as Group;
+            const old = vgroup.children.map(c => c.container);
+            vgroup.setState({ items: laidOut("vgroup", [nentry("c")]) });
+            await nextFrames();
+            old.forEach(c => expect(vgroup.container.contains(c)).toBe(false));
+            expect(Array.from(vgroup.container.children)).toEqual([vgroup.label, emitter.componentMap["/c"][0].container]);
+            expect(vgroup.container.contains(vgroup.tabs)).toBe(false);
         });
     });
 });

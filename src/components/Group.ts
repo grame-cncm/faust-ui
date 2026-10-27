@@ -257,6 +257,13 @@ export default class Group extends AbstractComponent<FaustUIGroupProps> {
             this.label.appendChild(this.labelCanvas);
             this.container.appendChild(this.label);
         }
+        this.mountChildren();
+        return this;
+    }
+    /**
+     * Append the tab bar and the children after the label: the tab click handler counts on this order
+     */
+    mountChildren() {
         if (this.tabs.children.length) this.container.appendChild(this.tabs);
         this.children.forEach((item) => {
             item.mount();
@@ -288,8 +295,14 @@ export default class Group extends AbstractComponent<FaustUIGroupProps> {
         };
         this.on("style", () => this.schedule(handleResize));
         const itemsChange = () => {
+            // Replace the old children in the DOM, and mount the new ones as at first mount
+            this.children.forEach(item => item.container.remove());
+            this.tabs.remove();
             this.updateUI();
             this.children.forEach(item => item.componentWillMount());
+            this.mountChildren();
+            if (this.tabs.children.length) (this.tabs.children[0] as HTMLSpanElement).click();
+            this.children.forEach(item => item.componentDidMount());
         };
         this.on("items", () => this.schedule(itemsChange));
         const labelChange = () => {
