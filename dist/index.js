@@ -2030,6 +2030,13 @@ class Group extends _AbstractComponent__WEBPACK_IMPORTED_MODULE_0__["default"] {
       this.label.appendChild(this.labelCanvas);
       this.container.appendChild(this.label);
     }
+    this.mountChildren();
+    return this;
+  }
+  /**
+   * Append the tab bar and the children after the label: the tab click handler counts on this order
+   */
+  mountChildren() {
     if (this.tabs.children.length) this.container.appendChild(this.tabs);
     this.children.forEach((item) => {
       item.mount();
@@ -2062,8 +2069,13 @@ class Group extends _AbstractComponent__WEBPACK_IMPORTED_MODULE_0__["default"] {
     };
     this.on("style", () => this.schedule(handleResize));
     const itemsChange = () => {
+      this.children.forEach((item) => item.container.remove());
+      this.tabs.remove();
       this.updateUI();
       this.children.forEach((item) => item.componentWillMount());
+      this.mountChildren();
+      if (this.tabs.children.length) this.tabs.children[0].click();
+      this.children.forEach((item) => item.componentDidMount());
     };
     this.on("items", () => this.schedule(itemsChange));
     const labelChange = () => {

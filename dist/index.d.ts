@@ -580,6 +580,10 @@ declare class Group extends AbstractComponent<FaustUIGroupProps> {
 	paintLabel(): this;
 	updateUI: () => void;
 	mount(): this;
+	/**
+	 * Append the tab bar and the children after the label: the tab click handler counts on this order
+	 */
+	mountChildren(): this;
 	componentDidMount(): this;
 }
 export interface IOptions {
