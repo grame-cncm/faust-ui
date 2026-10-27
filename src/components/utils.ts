@@ -4,6 +4,17 @@ export const atodb = (a: number) => 20 * Math.log10(a);
 export const dbtoa = (db: number) => 10 ** (db / 20);
 export const denormalize = (x: number, min: number, max: number) => min + (max - min) * x;
 export const normalize = (x: number, min: number, max: number) => (x - min) / (max - min) || 0;
+/**
+ * Number of whole steps in `x`, tolerating the error of floating-point division (0.3 / 0.1 = 2.9999999999999996)
+ */
+export const countSteps = (x: number, step: number) => Math.floor(x / step + 1e-9);
+/**
+ * Number of decimals needed to write `x` (0.25 → 2, 440 → 0, 1e-7 → 7)
+ */
+export const decimals = (x: number) => {
+    const [mantissa, exponent] = x.toExponential().split("e");
+    return Math.max(0, (mantissa.split(".")[1] || "").length - +exponent);
+};
 export const normLog = (x: number, min: number, max: number) => {
     const normalized = normalize(x, min, max);
     const logMin = Math.log(Math.max(Number.EPSILON, min));

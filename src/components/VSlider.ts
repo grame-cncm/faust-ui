@@ -1,5 +1,5 @@
 import AbstractItem from "./AbstractItem";
-import { fillRoundedRect, normLog, normExp, denormalize, normalize } from "./utils";
+import { fillRoundedRect, normLog, normExp, denormalize, normalize, countSteps } from "./utils";
 import type { FaustUIItemProps, PointerDownEvent, PointerDragEvent } from "./types";
 import type { FaustUINentryStyle } from "./Nentry";
 import "./VSlider.scss";
@@ -162,7 +162,7 @@ export default class VSlider extends AbstractItem<FaustUISliderStyle> {
         if (step) {
             if (type === "enum") return enums.length;
             if (type === "int") return Math.min(Math.floor((max - min) / (Math.round(step) || 0)), maxSteps);
-            return Math.floor((max - min) / step);
+            return countSteps(max - min, step);
         }
         return maxSteps;
     }

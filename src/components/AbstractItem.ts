@@ -1,5 +1,5 @@
 import AbstractComponent from "./AbstractComponent";
-import { normalize, normExp, normLog } from "./utils";
+import { countSteps, decimals, normalize, normExp, normLog } from "./utils";
 import type { FaustUIItemStyle, FaustUIItemProps, PointerDownEvent as MouseOrTouchDownEvent, PointerDragEvent as MouseOrTouchMoveEvent, PointerUpEvent as MouseOrTouchUpEvent } from "./types";
 import "./Base.scss";
 
@@ -180,7 +180,10 @@ export default abstract class AbstractItem<T extends FaustUIItemStyle> extends A
         if (typeof min !== "number" || typeof max !== "number") return value;
         const v = Math.min(max, Math.max(min, value));
         if (!step) return v;
-        return min + Math.floor((v - min) / step) * step;
+        // The nearest step, but not past max when max is not on a step
+        const steps = Math.min(Math.round((v - min) / step), countSteps(max - min, step));
+        // Without the noise of floating-point arithmetic (6 * 0.1 = 0.6000000000000001)
+        return +(min + steps * step).toFixed(Math.max(decimals(step), decimals(min)));
     }
     /**
      * Use this method if you want the emitter to send value to DSP
@@ -299,7 +302,7 @@ export default abstract class AbstractItem<T extends FaustUIItemStyle> extends A
         if (step) {
             if (type === "enum") return enums.length;
             if (type === "int") return Math.min(Math.floor((max - min) / (Math.round(step) || 1)), maxSteps);
-            return Math.floor((max - min) / step);
+            return countSteps(max - min, step);
         }
         return maxSteps;
     }
