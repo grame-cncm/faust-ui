@@ -24,7 +24,8 @@ export const group = (type: GroupType, label: string, items: FaustUIItem[]): Fau
  * A 2D context that draws nothing, for jsdom which has no canvas
  */
 export const fakeContext2D = () => new Proxy({} as Record<string | symbol, unknown>, {
-    get: (target, key) => (key in target ? target[key] : () => ({ addColorStop: () => undefined })),
+    // Methods return what gradients and image data need: a color stop to add, and pixels
+    get: (target, key) => (key in target ? target[key] : () => ({ addColorStop: () => undefined, data: new Uint8ClampedArray(4) })),
     set: (target, key, value) => {
         target[key] = value;
         return true;
