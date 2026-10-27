@@ -9,7 +9,7 @@ export default class TGroup extends AbstractGroup {
         this.items.forEach((item) => {
             item.adjust();
             this.layout.width = Math.max(this.layout.width, item.layout.width + 2 * AbstractGroup.padding);
-            this.layout.height = Math.max(this.layout.height, item.layout.height + 2 * AbstractGroup.padding + TGroup.labelHeight);
+            this.layout.height = Math.max(this.layout.height, item.layout.height + 2 * AbstractGroup.padding + (this.isRoot ? 0 : AbstractGroup.labelHeight));
         });
         const tabsCount = this.items.length;
         this.layout.width = Math.max(this.layout.width, tabsCount * TGroup.tabLayout.width);

@@ -219,8 +219,9 @@ export default class Group extends AbstractComponent<FaustUIGroupProps> {
             this.tabs.innerHTML = "";
             this.tabs.style.height = `${grid}px`;
             this.tabs.style.top = `${0.25 * grid}px`;
-            this.state.items.forEach((item, i) => {
-                const label = item.label;
+            // One header per child, so that header i always shows child i
+            this.children.forEach((child, i) => {
+                const label = child.state.label;
                 const tab = document.createElement("span");
                 tab.innerText = label;
                 tab.className = "faust-ui-tgroup-tab";
@@ -229,18 +230,14 @@ export default class Group extends AbstractComponent<FaustUIGroupProps> {
                 tab.style.height = `${grid - 20}px`;
                 tab.style.lineHeight = `${grid - 20}px`;
                 tab.addEventListener("click", () => {
-                    const groups: HTMLDivElement[] = [];
-                    for (let j = 0; j < this.container.children.length; j++) {
-                        const element = this.container.children[j] as HTMLDivElement;
-                        if (j > 1) groups.push(element);
-                    }
-                    for (let j = 0; j < groups.length; j++) {
-                        const element = groups[j] as HTMLDivElement;
+                    // The tabs are the containers of the children, whatever else the container holds
+                    // (a root tgroup has no label)
+                    this.children.forEach((child, j) => {
                         // "inherit", not "visible": a visible descendant overrides a hidden
                         // ancestor, so the active tab of a tgroup nested in a hidden tab
                         // would show through.
-                        element.style.visibility = i === j ? "inherit" : "hidden";
-                    }
+                        child.container.style.visibility = i === j ? "inherit" : "hidden";
+                    });
                     for (let j = 0; j < this.tabs.children.length; j++) {
                         const e = this.tabs.children[j];
                         if (i !== j) {

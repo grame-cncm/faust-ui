@@ -121,6 +121,36 @@ describe("TGroup layout", () => {
         });
     });
 
+    describe("as the root", () => {
+        // FaustUI makes a vgroup root, but a TGroup can be laid out as a root, without a label
+        const rootTGroup = () => {
+            const tgroup = new TGroup({
+                type: "tgroup",
+                label: "",
+                items: Layout.getItems([
+                    group("hgroup", "Short", [vslider("v")]),
+                    group("vgroup", "Tall", [nentry("n1"), nentry("n2"), nentry("n3"), nentry("n4"), nentry("n5"), nentry("n6")])
+                ]) as AbstractGroup[]
+            }, true);
+            return tgroup.adjust().expand(0, 0).offset();
+        };
+
+        it("has no label height", () => {
+            const tgroup = rootTGroup();
+            // The tall tab is not sizable: the tgroup is as high as it, plus padding and tab bar
+            const tall = tgroup.items[1];
+            expect(tall.layout.sizing).toBe("none");
+            expect(tgroup.layout.height).toBeCloseTo(tall.layout.height + 2 * padding + tabHeight);
+        });
+
+        it("gives its tabs its whole height under the tab bar", () => {
+            const tgroup = rootTGroup();
+            const short = tgroup.items[0];
+            expect(short.layout.top).toBeCloseTo(padding + tabHeight);
+            expect(short.layout.top + short.layout.height).toBeCloseTo(tgroup.layout.height - padding);
+        });
+    });
+
     describe("edge cases", () => {
         it("has a minimum width when it has no tabs", () => {
             const tgroup = calc([group("tgroup", "Empty", [])]).items[0];

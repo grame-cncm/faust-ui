@@ -4,9 +4,10 @@ import Group from "../../src/components/Group";
 import Menu from "../../src/components/Menu";
 import Nentry from "../../src/components/Nentry";
 import Layout from "../../src/layout/Layout";
+import LayoutTGroup from "../../src/layout/TGroup";
 import type AbstractGroup from "../../src/layout/AbstractGroup";
 import type { FaustUIItem } from "@grame/faustwasm";
-import { button, fakeContext2D, group, hslider, isShown, knob, menu, mount, nentry, nextFrames, parts, vslider } from "../helpers";
+import { button, fakeContext2D, fakeEmitter, group, hslider, isShown, knob, menu, mount, nentry, nextFrames, parts, vslider } from "../helpers";
 
 beforeEach(() => {
     // jsdom has no canvas: the components draw into a context that does nothing
@@ -107,6 +108,41 @@ describe("TGroup component", () => {
             headers[1].click();
             expect(tabs.map(isShown)).toEqual([false, true, false]);
             expect(headers.map(h => h.classList.contains("active"))).toEqual([false, true, false]);
+        });
+
+        it("switches the tabs of a root tgroup, which has no label", () => {
+            const layout = new LayoutTGroup({ type: "tgroup", label: "", items: Layout.getItems([group("vgroup", "A", []), group("vgroup", "B", []), group("vgroup", "C", [])]) as AbstractGroup[] }, true);
+            layout.adjust().expand(0, 0).offset();
+            const tgroup = new Group({
+                label: "",
+                type: "tgroup",
+                items: layout.items as any,
+                style: { grid: 40, width: layout.layout.width, height: layout.layout.height, left: 0, top: 0 },
+                isRoot: true,
+                emitter: fakeEmitter() as any
+            });
+            tgroup.componentWillMount();
+            tgroup.mount();
+            document.body.appendChild(tgroup.container);
+            tgroup.componentDidMount();
+            const { headers, tabs } = parts(tgroup);
+            expect(Array.from(tgroup.container.children)).toEqual([tgroup.tabs, ...tabs]);
+            expect(tabs.map(isShown)).toEqual([true, false, false]);
+            headers[1].click();
+            expect(tabs.map(isShown)).toEqual([false, true, false]);
+            headers[0].click();
+            expect(tabs.map(isShown)).toEqual([true, false, false]);
+        });
+
+        it("switches its tabs whatever else its container holds", () => {
+            const { tgroup } = mountTGroup(simple());
+            const extra = document.createElement("div");
+            tgroup.container.insertBefore(extra, tgroup.tabs);
+            const { headers, tabs } = parts(tgroup);
+            headers[2].click();
+            expect(tabs.map(isShown)).toEqual([false, false, true]);
+            expect(isShown(extra)).toBe(true);
+            expect(isShown(tgroup.tabs)).toBe(true);
         });
 
         it("keeps the active tab when its header is clicked again", () => {
