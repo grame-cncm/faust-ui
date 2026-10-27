@@ -27,7 +27,7 @@ export default class Numerical extends AbstractItem<FaustUINentryStyle> {
         super.componentWillMount();
         this.input = document.createElement("input");
         this.input.disabled = true;
-        this.input.value = (+this.state.value.toFixed(3)).toString() + (this.state.unit || "");
+        this.input.value = this.displayValue + (this.state.unit || "");
         this.setStyle();
         return this;
     }
@@ -42,7 +42,7 @@ export default class Numerical extends AbstractItem<FaustUINentryStyle> {
         super.componentDidMount();
         this.on("style", () => this.schedule(this.setStyle));
         this.on("label", () => this.schedule(this.paintLabel));
-        const valueChange = () => this.input.value = (+this.state.value.toFixed(3)).toString() + (this.state.unit || "");
+        const valueChange = () => this.input.value = this.displayValue + (this.state.unit || "");
         this.on("value", () => this.schedule(valueChange));
         return this;
     }

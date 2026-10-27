@@ -45,7 +45,7 @@ export default class Knob extends AbstractItem<FaustUIKnobStyle> {
         this.ctx = this.canvas.getContext("2d");
         this.inputNumber = document.createElement("input");
         this.inputNumber.type = "number";
-        this.inputNumber.value = (+this.state.value.toFixed(3)).toString();
+        this.inputNumber.value = this.displayValue;
         this.inputNumber.max = this.state.max.toString();
         this.inputNumber.min = this.state.min.toString();
         this.inputNumber.step = this.state.step.toString();
@@ -83,7 +83,7 @@ export default class Knob extends AbstractItem<FaustUIKnobStyle> {
         });
         this.on("label", () => this.schedule(this.paintLabel));
         const valueChange = () => {
-            this.inputNumber.value = (+this.state.value.toFixed(3)).toString();
+            this.inputNumber.value = this.displayValue;
             this.input.value = this.inputNumber.value + (this.state.unit || "");
         };
         this.on("value", () => {

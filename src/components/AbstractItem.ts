@@ -186,6 +186,18 @@ export default abstract class AbstractItem<T extends FaustUIItemStyle> extends A
         return +(min + steps * step).toFixed(Math.max(decimals(step), decimals(min)));
     }
     /**
+     * The value as displayed, with 3 decimals or more when the step is finer (0.0001)
+     * or the range smaller than 1 (a bargraph from 0 to 0.001), without trailing zeros
+     */
+    get displayValue() {
+        const { value, step, min, max } = this.state;
+        const range = max - min;
+        const rangeDecimals = range > 0 && range < 1 ? 3 - Math.floor(Math.log10(range)) : 0;
+        const fixed = value.toFixed(Math.min(10, Math.max(3, step ? decimals(step) : 0, rangeDecimals)));
+        // A number under 1e-6 prints with an exponent: trim the zeros of the fixed string instead
+        return `${+fixed}`.includes("e") ? fixed.replace(/\.?0+$/, "") : `${+fixed}`;
+    }
+    /**
      * Use this method if you want the emitter to send value to DSP
      */
     setValue(valueIn: number) {

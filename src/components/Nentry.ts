@@ -35,7 +35,7 @@ export default class Nentry extends AbstractItem<FaustUINentryStyle> {
         super.componentWillMount();
         this.input = document.createElement("input");
         this.input.type = "number";
-        this.input.value = (+this.state.value.toFixed(3)).toString();
+        this.input.value = this.displayValue;
         this.input.max = this.state.max.toString();
         this.input.min = this.state.min.toString();
         this.input.step = this.state.step.toString();
@@ -57,7 +57,7 @@ export default class Nentry extends AbstractItem<FaustUINentryStyle> {
         this.input.addEventListener("change", this.handleChange);
         this.on("style", () => this.schedule(this.setStyle));
         this.on("label", () => this.schedule(this.paintLabel));
-        const valueChange = () => this.input.value = (+this.state.value.toFixed(3)).toString();
+        const valueChange = () => this.input.value = this.displayValue;
         this.on("value", () => this.schedule(valueChange));
         const maxChange = () => this.input.max = this.state.max.toString();
         this.on("max", () => this.schedule(maxChange));

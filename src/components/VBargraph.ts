@@ -53,7 +53,7 @@ export default class VBargraph extends AbstractItem<FaustUIBargraphStyle> {
         this.ctx = this.canvas.getContext("2d");
         this.input = document.createElement("input");
         this.input.disabled = true;
-        this.input.value = (+this.state.value.toFixed(3)).toString() + (this.state.unit || "");
+        this.input.value = this.displayValue + (this.state.unit || "");
         this.setStyle();
         return this;
     }
@@ -75,7 +75,7 @@ export default class VBargraph extends AbstractItem<FaustUIBargraphStyle> {
             this.schedule(this.paint);
         });
         this.on("label", () => this.schedule(this.paintLabel));
-        const valueChange = () => this.input.value = (+this.state.value.toFixed(3)).toString() + (this.state.unit || "");
+        const valueChange = () => this.input.value = this.displayValue + (this.state.unit || "");
         this.on("value", () => {
             this.schedule(valueChange);
             this.schedule(this.paint);
