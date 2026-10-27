@@ -16,6 +16,8 @@ When a message is received, the window that initiated this message will be consi
 
 User can also override the `paramChangeByUI` function or manually call `paramChangeByDSP` method to communicate differently with the UI or the DSP.
 
+Call the `destroy` method before dropping a `FaustUI`, or before creating another one in the same root: it stops listening to the window and removes the UI from its root. Otherwise the old instance keeps receiving the window messages and mounting the UIs they bring.
+
 Once a new UI needs to be rendered, the class will firstly send it to a layout parser/calculator in order to get the coordination and size of each component.
 
 ## Parser

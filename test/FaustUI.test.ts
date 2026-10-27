@@ -9,17 +9,36 @@ import { fakeContext2D, group, hslider, isShown, nentry, nextFrames, parts } fro
 import { sequencer } from "./fixtures";
 
 let root: HTMLDivElement;
+let created: FaustUI[];
 beforeEach(() => {
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => fakeContext2D() as any);
     root = document.createElement("div");
     document.body.appendChild(root);
+    created = [];
 });
 afterEach(() => {
+    // Stop the UIs listening to the window, so they do not receive the messages of the next tests
+    created.forEach(faustUI => faustUI.destroy());
     document.body.innerHTML = "";
     vi.restoreAllMocks();
 });
 
-const createUI = (ui: FaustUIItem[], listenWindowMessage = false) => new FaustUI({ root, ui: ui as never, listenWindowResize: false, listenWindowMessage });
+const createUI = (ui: FaustUIItem[], listenWindowMessage = false, listenWindowResize = false) => {
+    const faustUI = new FaustUI({ root, ui: ui as never, listenWindowResize, listenWindowMessage });
+    created.push(faustUI);
+    return faustUI;
+};
+/**
+ * Posts `data` to the window, and waits until every listener received it
+ */
+const post = (data: any) => new Promise<void>((resolve) => {
+    const received = () => {
+        window.removeEventListener("message", received);
+        resolve();
+    };
+    window.addEventListener("message", received);
+    window.postMessage(data, "*");
+});
 /**
  * The tgroups of a mounted UI, by label
  */
@@ -154,5 +173,58 @@ describe("FaustUI with tgroups", () => {
         parts(Sequencer).headers.forEach(h => expect(h.style.width).toBe(`${2 * 80 - 20}px`));
         const sequencerItem = faustUI.ui[0] as any;
         expect(Sequencer.container.style.width).toBe(`${sequencerItem.layout.width * 80}px`);
+    });
+});
+
+describe("FaustUI.destroy", () => {
+    it("removes the UI from its DOM root", () => {
+        const faustUI = createUI(sequencer());
+        faustUI.destroy();
+        expect(root.children).toHaveLength(0);
+        expect(faustUI.componentMap).toEqual({});
+        expect(faustUI.faustUIRoot).toBeUndefined();
+    });
+
+    it("stops taking the UIs and the param values of window messages", async () => {
+        const faustUI = createUI([group("vgroup", "G", [nentry("n")])], true);
+        await post({ type: "param", path: "/n", value: 3 });
+        const n = faustUI.componentMap["/n"][0];
+        expect(n.state.value).toBe(3);
+        faustUI.destroy();
+        await post({ type: "param", path: "/n", value: 5 });
+        expect(n.state.value).toBe(3);
+        await post({ type: "ui", ui: sequencer() });
+        expect(root.children).toHaveLength(0);
+        expect(faustUI.componentMap).toEqual({});
+    });
+
+    it("stops resizing with the window", () => {
+        const faustUI = createUI(sequencer(), false, true);
+        const resize = vi.spyOn(faustUI, "resize");
+        window.dispatchEvent(new Event("resize"));
+        expect(resize).toHaveBeenCalledTimes(1);
+        faustUI.destroy();
+        window.dispatchEvent(new Event("resize"));
+        expect(resize).toHaveBeenCalledTimes(1);
+        // Resizing a destroyed UI does nothing
+        expect(() => faustUI.resize()).not.toThrow();
+    });
+
+    it("lets a new FaustUI take its root and the window messages", async () => {
+        const first = createUI(sequencer(), true);
+        first.destroy();
+        const second = createUI([], true);
+        await post({ type: "ui", ui: [group("tgroup", "T", [group("vgroup", "X", [hslider("x")])])] });
+        expect(root.children).toHaveLength(1);
+        expect(root.firstElementChild).toBe(second.faustUIRoot.container);
+        expect(Object.keys(second.componentMap)).toEqual(["/x"]);
+        expect(first.componentMap).toEqual({});
+        expect(first.faustUIRoot).toBeUndefined();
+    });
+
+    it("can be called twice", () => {
+        const faustUI = createUI(sequencer(), true, true);
+        faustUI.destroy();
+        expect(() => faustUI.destroy()).not.toThrow();
     });
 });

@@ -35,25 +35,39 @@ export default class FaustUI {
         this.DOMroot = root;
         this.ui = uiIn || [];
         if (typeof listenWindowResize === "undefined" || listenWindowResize === true) {
-            window.addEventListener("resize", () => {
-                this.resize();
-            });
+            window.addEventListener("resize", this.handleWindowResize);
         }
         if (typeof listenWindowMessage === "undefined" || listenWindowMessage === true) {
-            window.addEventListener("message", (e) => {
-                const { data, source } = e;
-                if (!data) return;
-                const { type } = data;
-                if (!type) return;
-                this.hostWindow = source as Window;
-                if (type === "ui") {
-                    this.ui = data.ui;
-                } else if (type === "param") {
-                    const { path, value } = data;
-                    this.paramChangeByDSP(path, value);
-                }
-            });
+            window.addEventListener("message", this.handleWindowMessage);
         }
+    }
+    private handleWindowResize = () => {
+        this.resize();
+    };
+    private handleWindowMessage = (e: MessageEvent) => {
+        const { data, source } = e;
+        if (!data) return;
+        const { type } = data;
+        if (!type) return;
+        this.hostWindow = source as Window;
+        if (type === "ui") {
+            this.ui = data.ui;
+        } else if (type === "param") {
+            const { path, value } = data;
+            this.paramChangeByDSP(path, value);
+        }
+    };
+    /**
+     * Stop listening to the window and remove the UI from the DOM root.
+     * Call it before dropping a FaustUI, or creating another one in the same root:
+     * otherwise it keeps receiving the window messages, and mounts the UIs they bring.
+     */
+    destroy() {
+        window.removeEventListener("resize", this.handleWindowResize);
+        window.removeEventListener("message", this.handleWindowMessage);
+        this.DOMroot.innerHTML = "";
+        this.componentMap = {};
+        this.faustUIRoot = undefined;
     }
     /**
      * Render the UI to DOM root
