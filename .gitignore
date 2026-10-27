@@ -86,3 +86,6 @@ $RECYCLE.BIN/
 
 # Local files
 local/
+
+# Vitest attachments (failure screenshots)
+.vitest/
