@@ -6,6 +6,7 @@ export default abstract class AbstractItem implements IItem {
     type: FaustUIInputType | FaustUIOutputType;
     label: string;
     address: string;
+    shortname: string;
     url: string;
     index: number;
     init: number;
