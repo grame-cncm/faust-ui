@@ -152,6 +152,8 @@ Run them with a coverage report of the sources, printed and written to `./covera
 npm run coverage
 ```
 
+GitHub Actions runs them with the coverage report on each push to `master` and on each pull request (`./.github/workflows/test.yml`).
+
 ## Versioning 
 You'll have to raise the package version number in `package.json` for `npm run update` to properly work.
 
