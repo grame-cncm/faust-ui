@@ -138,23 +138,24 @@ export default class Group extends AbstractComponent<FaustUIGroupProps> {
         this.children.forEach(item => item.setToInitialValue());
     }
     setState(newState: { [key in keyof FaustUIGroupProps]?: FaustUIGroupProps[key] }) {
-        let shouldUpdate = false;
         for (const key in newState) {
             const stateKey = key as keyof FaustUIGroupProps;
             const stateValue = newState[stateKey];
+            let changed = false;
             if (stateKey === "style") {
                 for (const key in newState.style) {
                     const styleKey = key as keyof FaustUIItemStyle;
                     if (styleKey in this.state.style /* Fix hidden -> canvas not rendered bug && this.state.style[styleKey] !== newState.style[styleKey] */) {
                         (this.state.style as any)[styleKey] = newState.style[styleKey];
-                        shouldUpdate = true;
+                        changed = true;
                     }
                 }
             } else if (stateKey in this.state && this.state[stateKey] !== stateValue) {
                 (this.state as any)[stateKey] = stateValue;
-                shouldUpdate = true;
-            } else return;
-            if (shouldUpdate) this.emit(stateKey, this.state[stateKey]);
+                changed = true;
+            }
+            // An unknown or unchanged key is skipped, not the keys after it
+            if (changed) this.emit(stateKey, this.state[stateKey]);
         }
     }
     componentWillMount() {

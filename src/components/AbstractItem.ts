@@ -225,18 +225,22 @@ export default abstract class AbstractItem<T extends FaustUIItemStyle> extends A
         for (const key in newState) {
             const stateKey = key as keyof FaustUIItemProps<T>;
             const stateValue = newState[stateKey];
+            let changed = false;
             if (stateKey === "style") {
                 for (const styleKey in newState.style) {
                     if (styleKey in this.state.style /* Fix hidden -> canvas not rendered bug && this.state.style[styleKey] !== newState.style[styleKey] */) {
                         this.state.style[styleKey] = newState.style[styleKey];
-                        shouldUpdate = true;
+                        changed = true;
                     }
                 }
             } else if (stateKey in this.state && this.state[stateKey] !== stateValue) {
                 (this.state as any)[stateKey] = stateValue;
-                shouldUpdate = true;
-            } else return false;
-            if (shouldUpdate) this.emit(stateKey, this.state[stateKey]);
+                changed = true;
+            }
+            // An unknown or unchanged key is skipped, not the keys after it
+            if (!changed) continue;
+            shouldUpdate = true;
+            this.emit(stateKey, this.state[stateKey]);
         }
         return shouldUpdate;
     }

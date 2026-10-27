@@ -55,14 +55,12 @@ export default abstract class AbstractComponent<T extends { [key: string]: any; 
      * set internal state and fire events for UI parts subscribed
      */
     setState(newState: Partial<T>) {
-        let shouldUpdate = false;
         for (const stateKey in newState) {
             const stateValue = newState[stateKey];
-            if (stateKey in this.state && this.state[stateKey] !== stateValue) {
-                this.state[stateKey] = stateValue;
-                shouldUpdate = true;
-            } else return;
-            if (shouldUpdate) this.emit(stateKey, this.state[stateKey]);
+            // An unknown or unchanged key is skipped, not the keys after it
+            if (!(stateKey in this.state) || this.state[stateKey] === stateValue) continue;
+            this.state[stateKey] = stateValue;
+            this.emit(stateKey, this.state[stateKey]);
         }
     }
     /**
