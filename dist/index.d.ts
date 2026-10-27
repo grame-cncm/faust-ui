@@ -231,6 +231,12 @@ declare abstract class AbstractItem<T extends FaustUIItemStyle> extends Abstract
 	 * Normalized value between 0 - 1.
 	 */
 	get distance(): number;
+	/**
+	 * Number of steps between the entries of an enum, one less than its entries: `enums` is an object, it has no length
+	 */
+	static enumSteps(enums: {
+		[key: string]: number;
+	}): number;
 	static getDistance(state: {
 		value: number;
 		min: number;
@@ -586,6 +592,10 @@ declare class Group extends AbstractComponent<FaustUIGroupProps> {
 	updateUI: () => void;
 	mount(): this;
 	/**
+	 * Unregister the widgets of this group and of its subgroups from the emitter, before they are replaced
+	 */
+	unregisterChildren(): this;
+	/**
 	 * Append the tab bar and the children after the label: the tab click handler counts on this order
 	 */
 	mountChildren(): this;
@@ -633,6 +643,10 @@ export declare class FaustUI {
 	 * This method should be called by components to register itself to map.
 	 */
 	register(path: string, item: AbstractItem<any>): void;
+	/**
+	 * Called by groups for the components they remove, so that the DSP no longer updates them.
+	 */
+	unregister(path: string, item: AbstractItem<any>): void;
 	/**
 	 * Notify the component to change its value.
 	 */

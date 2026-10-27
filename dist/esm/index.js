@@ -236,6 +236,16 @@ class FaustUI {
     else this.componentMap[path] = [item];
   }
   /**
+   * Called by groups for the components they remove, so that the DSP no longer updates them.
+   */
+  unregister(path, item) {
+    const items = this.componentMap[path];
+    if (!items) return;
+    const remaining = items.filter((i) => i !== item);
+    if (remaining.length) this.componentMap[path] = remaining;
+    else delete this.componentMap[path];
+  }
+  /**
    * Notify the component to change its value.
    */
   paramChangeByDSP(path, value) {
@@ -372,14 +382,11 @@ class AbstractComponent extends _shren_typed_event_emitter__WEBPACK_IMPORTED_MOD
    * set internal state and fire events for UI parts subscribed
    */
   setState(newState) {
-    let shouldUpdate = false;
     for (const stateKey in newState) {
       const stateValue = newState[stateKey];
-      if (stateKey in this.state && this.state[stateKey] !== stateValue) {
-        this.state[stateKey] = stateValue;
-        shouldUpdate = true;
-      } else return;
-      if (shouldUpdate) this.emit(stateKey, this.state[stateKey]);
+      if (!(stateKey in this.state) || this.state[stateKey] === stateValue) continue;
+      this.state[stateKey] = stateValue;
+      this.emit(stateKey, this.state[stateKey]);
     }
   }
   /**
@@ -611,18 +618,21 @@ const _AbstractItem = class _AbstractItem extends _AbstractComponent__WEBPACK_IM
     for (const key in newState) {
       const stateKey = key;
       const stateValue = newState[stateKey];
+      let changed = false;
       if (stateKey === "style") {
         for (const styleKey in newState.style) {
           if (styleKey in this.state.style) {
             this.state.style[styleKey] = newState.style[styleKey];
-            shouldUpdate = true;
+            changed = true;
           }
         }
       } else if (stateKey in this.state && this.state[stateKey] !== stateValue) {
         this.state[stateKey] = stateValue;
-        shouldUpdate = true;
-      } else return false;
-      if (shouldUpdate) this.emit(stateKey, this.state[stateKey]);
+        changed = true;
+      }
+      if (!changed) continue;
+      shouldUpdate = true;
+      this.emit(stateKey, this.state[stateKey]);
     }
     return shouldUpdate;
   }
@@ -694,9 +704,9 @@ const _AbstractItem = class _AbstractItem extends _AbstractComponent__WEBPACK_IM
    */
   get stepsCount() {
     const { type, max, min, step, enums } = this.state;
-    const maxSteps = type === "enum" ? enums.length : type === "int" ? max - min : (max - min) / step;
+    const maxSteps = type === "enum" ? _AbstractItem.enumSteps(enums) : type === "int" ? max - min : (max - min) / step;
     if (step) {
-      if (type === "enum") return enums.length;
+      if (type === "enum") return _AbstractItem.enumSteps(enums);
       if (type === "int") return Math.min(Math.floor((max - min) / (Math.round(step) || 1)), maxSteps);
       return (0,_utils__WEBPACK_IMPORTED_MODULE_1__.countSteps)(max - min, step);
     }
@@ -709,9 +719,15 @@ const _AbstractItem = class _AbstractItem extends _AbstractComponent__WEBPACK_IM
     const { type, max, min, value, enums, scale } = this.state;
     return _AbstractItem.getDistance({ type, max, min, value, enums, scale });
   }
+  /**
+   * Number of steps between the entries of an enum, one less than its entries: `enums` is an object, it has no length
+   */
+  static enumSteps(enums) {
+    return Math.max(0, Object.keys(enums || {}).length - 1);
+  }
   static getDistance(state) {
     const { type, max, min, value, enums, scale } = state;
-    if (type === "enum") return value / (enums.length - 1);
+    if (type === "enum") return value / (_AbstractItem.enumSteps(enums) || 1);
     const v = scale === "exp" ? (0,_utils__WEBPACK_IMPORTED_MODULE_1__.normLog)(value, min, max) : scale === "log" ? (0,_utils__WEBPACK_IMPORTED_MODULE_1__.normExp)(value, min, max) : value;
     return (0,_utils__WEBPACK_IMPORTED_MODULE_1__.normalize)(v, min, max);
   }
@@ -1066,23 +1082,23 @@ class Group extends _AbstractComponent__WEBPACK_IMPORTED_MODULE_0__["default"] {
     this.children.forEach((item) => item.setToInitialValue());
   }
   setState(newState) {
-    let shouldUpdate = false;
     for (const key in newState) {
       const stateKey = key;
       const stateValue = newState[stateKey];
+      let changed = false;
       if (stateKey === "style") {
         for (const key2 in newState.style) {
           const styleKey = key2;
           if (styleKey in this.state.style) {
             this.state.style[styleKey] = newState.style[styleKey];
-            shouldUpdate = true;
+            changed = true;
           }
         }
       } else if (stateKey in this.state && this.state[stateKey] !== stateValue) {
         this.state[stateKey] = stateValue;
-        shouldUpdate = true;
-      } else return;
-      if (shouldUpdate) this.emit(stateKey, this.state[stateKey]);
+        changed = true;
+      }
+      if (changed) this.emit(stateKey, this.state[stateKey]);
     }
   }
   componentWillMount() {
@@ -1132,6 +1148,17 @@ class Group extends _AbstractComponent__WEBPACK_IMPORTED_MODULE_0__["default"] {
     return this;
   }
   /**
+   * Unregister the widgets of this group and of its subgroups from the emitter, before they are replaced
+   */
+  unregisterChildren() {
+    this.children.forEach((item) => {
+      var _a;
+      if (item instanceof Group) item.unregisterChildren();
+      else (_a = this.state.emitter) == null ? void 0 : _a.unregister(item.state.address, item);
+    });
+    return this;
+  }
+  /**
    * Append the tab bar and the children after the label: the tab click handler counts on this order
    */
   mountChildren() {
@@ -1167,6 +1194,7 @@ class Group extends _AbstractComponent__WEBPACK_IMPORTED_MODULE_0__["default"] {
     };
     this.on("style", () => this.schedule(handleResize));
     const itemsChange = () => {
+      this.unregisterChildren();
       this.children.forEach((item) => item.container.remove());
       this.tabs.remove();
       this.updateUI();
@@ -2572,9 +2600,9 @@ class VSlider extends _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"] {
   }
   get stepsCount() {
     const { type, max, min, step, enums } = this.state;
-    const maxSteps = type === "enum" ? enums.length : type === "int" ? max - min : (max - min) / step;
+    const maxSteps = type === "enum" ? _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"].enumSteps(enums) : type === "int" ? max - min : (max - min) / step;
     if (step) {
-      if (type === "enum") return enums.length;
+      if (type === "enum") return _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"].enumSteps(enums);
       if (type === "int") return Math.min(Math.floor((max - min) / (Math.round(step) || 0)), maxSteps);
       return (0,_utils__WEBPACK_IMPORTED_MODULE_1__.countSteps)(max - min, step);
     }
@@ -2628,7 +2656,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   toMIDI: () => (/* binding */ toMIDI),
 /* harmony export */   toRad: () => (/* binding */ toRad)
 /* harmony export */ });
-const toMIDI = (f) => ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][(f % 12 + 12) % 12] + Math.round(f / 12 - 2);
+const toMIDI = (f) => ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][(f % 12 + 12) % 12] + (Math.floor(f / 12) - 2);
 const toRad = (degrees) => degrees * Math.PI / 180;
 const atodb = (a) => 20 * Math.log10(a);
 const dbtoa = (db) => 10 ** (db / 20);
