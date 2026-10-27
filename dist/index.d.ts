@@ -612,6 +612,14 @@ export declare class FaustUI {
 	 * Calculate incoming UI's layout, bind window events
 	 */
 	constructor(options: IOptions);
+	private handleWindowResize;
+	private handleWindowMessage;
+	/**
+	 * Stop listening to the window and remove the UI from the DOM root.
+	 * Call it before dropping a FaustUI, or creating another one in the same root:
+	 * otherwise it keeps receiving the window messages, and mounts the UIs they bring.
+	 */
+	destroy(): void;
 	/**
 	 * Render the UI to DOM root
 	 */

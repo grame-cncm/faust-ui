@@ -1080,6 +1080,22 @@ class FaustUI {
    */
   constructor(options) {
     this.componentMap = {};
+    this.handleWindowResize = () => {
+      this.resize();
+    };
+    this.handleWindowMessage = (e) => {
+      const { data, source } = e;
+      if (!data) return;
+      const { type } = data;
+      if (!type) return;
+      this.hostWindow = source;
+      if (type === "ui") {
+        this.ui = data.ui;
+      } else if (type === "param") {
+        const { path, value } = data;
+        this.paramChangeByDSP(path, value);
+      }
+    };
     /**
      * Can be overriden, called by components when its value is changed by user.
      */
@@ -1091,25 +1107,23 @@ class FaustUI {
     this.DOMroot = root;
     this.ui = uiIn || [];
     if (typeof listenWindowResize === "undefined" || listenWindowResize === true) {
-      window.addEventListener("resize", () => {
-        this.resize();
-      });
+      window.addEventListener("resize", this.handleWindowResize);
     }
     if (typeof listenWindowMessage === "undefined" || listenWindowMessage === true) {
-      window.addEventListener("message", (e) => {
-        const { data, source } = e;
-        if (!data) return;
-        const { type } = data;
-        if (!type) return;
-        this.hostWindow = source;
-        if (type === "ui") {
-          this.ui = data.ui;
-        } else if (type === "param") {
-          const { path, value } = data;
-          this.paramChangeByDSP(path, value);
-        }
-      });
+      window.addEventListener("message", this.handleWindowMessage);
     }
+  }
+  /**
+   * Stop listening to the window and remove the UI from the DOM root.
+   * Call it before dropping a FaustUI, or creating another one in the same root:
+   * otherwise it keeps receiving the window messages, and mounts the UIs they bring.
+   */
+  destroy() {
+    window.removeEventListener("resize", this.handleWindowResize);
+    window.removeEventListener("message", this.handleWindowMessage);
+    this.DOMroot.innerHTML = "";
+    this.componentMap = {};
+    this.faustUIRoot = void 0;
   }
   /**
    * Render the UI to DOM root
@@ -1478,7 +1492,8 @@ const _AbstractItem = class _AbstractItem extends _AbstractComponent__WEBPACK_IM
     if (typeof min !== "number" || typeof max !== "number") return value;
     const v = Math.min(max, Math.max(min, value));
     if (!step) return v;
-    return min + Math.floor((v - min) / step) * step;
+    const steps = Math.min(Math.round((v - min) / step), (0,_utils__WEBPACK_IMPORTED_MODULE_1__.countSteps)(max - min, step));
+    return +(min + steps * step).toFixed(Math.max((0,_utils__WEBPACK_IMPORTED_MODULE_1__.decimals)(step), (0,_utils__WEBPACK_IMPORTED_MODULE_1__.decimals)(min)));
   }
   /**
    * Use this method if you want the emitter to send value to DSP
@@ -1595,7 +1610,7 @@ const _AbstractItem = class _AbstractItem extends _AbstractComponent__WEBPACK_IM
     if (step) {
       if (type === "enum") return enums.length;
       if (type === "int") return Math.min(Math.floor((max - min) / (Math.round(step) || 1)), maxSteps);
-      return Math.floor((max - min) / step);
+      return (0,_utils__WEBPACK_IMPORTED_MODULE_1__.countSteps)(max - min, step);
     }
     return maxSteps;
   }
@@ -1853,8 +1868,8 @@ class Group extends _AbstractComponent__WEBPACK_IMPORTED_MODULE_0__["default"] {
         this.tabs.innerHTML = "";
         this.tabs.style.height = `${grid}px`;
         this.tabs.style.top = `${0.25 * grid}px`;
-        this.state.items.forEach((item, i) => {
-          const label = item.label;
+        this.children.forEach((child, i) => {
+          const label = child.state.label;
           const tab = document.createElement("span");
           tab.innerText = label;
           tab.className = "faust-ui-tgroup-tab";
@@ -1863,15 +1878,9 @@ class Group extends _AbstractComponent__WEBPACK_IMPORTED_MODULE_0__["default"] {
           tab.style.height = `${grid - 20}px`;
           tab.style.lineHeight = `${grid - 20}px`;
           tab.addEventListener("click", () => {
-            const groups = [];
-            for (let j = 0; j < this.container.children.length; j++) {
-              const element = this.container.children[j];
-              if (j > 1) groups.push(element);
-            }
-            for (let j = 0; j < groups.length; j++) {
-              const element = groups[j];
-              element.style.visibility = i === j ? "inherit" : "hidden";
-            }
+            this.children.forEach((child2, j) => {
+              child2.container.style.visibility = i === j ? "inherit" : "hidden";
+            });
             for (let j = 0; j < this.tabs.children.length; j++) {
               const e = this.tabs.children[j];
               if (i !== j) {
@@ -3478,7 +3487,7 @@ class VSlider extends _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"] {
     if (step) {
       if (type === "enum") return enums.length;
       if (type === "int") return Math.min(Math.floor((max - min) / (Math.round(step) || 0)), maxSteps);
-      return Math.floor((max - min) / step);
+      return (0,_utils__WEBPACK_IMPORTED_MODULE_1__.countSteps)(max - min, step);
     }
     return maxSteps;
   }
@@ -3516,7 +3525,9 @@ class VSlider extends _AbstractItem__WEBPACK_IMPORTED_MODULE_0__["default"] {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   atodb: () => (/* binding */ atodb),
+/* harmony export */   countSteps: () => (/* binding */ countSteps),
 /* harmony export */   dbtoa: () => (/* binding */ dbtoa),
+/* harmony export */   decimals: () => (/* binding */ decimals),
 /* harmony export */   denormalize: () => (/* binding */ denormalize),
 /* harmony export */   fillRoundedRect: () => (/* binding */ fillRoundedRect),
 /* harmony export */   iNormExp: () => (/* binding */ iNormExp),
@@ -3534,6 +3545,11 @@ const atodb = (a) => 20 * Math.log10(a);
 const dbtoa = (db) => 10 ** (db / 20);
 const denormalize = (x, min, max) => min + (max - min) * x;
 const normalize = (x, min, max) => (x - min) / (max - min) || 0;
+const countSteps = (x, step) => Math.floor(x / step + 1e-9);
+const decimals = (x) => {
+  const [mantissa, exponent] = x.toExponential().split("e");
+  return Math.max(0, (mantissa.split(".")[1] || "").length - +exponent);
+};
 const normLog = (x, min, max) => {
   const normalized = normalize(x, min, max);
   const logMin = Math.log(Math.max(Number.EPSILON, min));
@@ -4257,7 +4273,7 @@ const _TGroup = class _TGroup extends _AbstractGroup__WEBPACK_IMPORTED_MODULE_0_
     this.items.forEach((item) => {
       item.adjust();
       this.layout.width = Math.max(this.layout.width, item.layout.width + 2 * _AbstractGroup__WEBPACK_IMPORTED_MODULE_0__["default"].padding);
-      this.layout.height = Math.max(this.layout.height, item.layout.height + 2 * _AbstractGroup__WEBPACK_IMPORTED_MODULE_0__["default"].padding + _TGroup.labelHeight);
+      this.layout.height = Math.max(this.layout.height, item.layout.height + 2 * _AbstractGroup__WEBPACK_IMPORTED_MODULE_0__["default"].padding + (this.isRoot ? 0 : _AbstractGroup__WEBPACK_IMPORTED_MODULE_0__["default"].labelHeight));
     });
     const tabsCount = this.items.length;
     this.layout.width = Math.max(this.layout.width, tabsCount * _TGroup.tabLayout.width);
