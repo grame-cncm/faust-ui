@@ -4,7 +4,7 @@ Guide for coding agents working on faust-ui. The [README](README.md) describes t
 
 ## What this is
 
-faust-ui renders the UI description that the Faust compiler puts in a DSP's JSON (groups, sliders, knobs, menus, bargraphs…) as DOM components, and connects them to the DSP. It is published on npm as `@shren/faust-ui` and used by faustwasm and the Faust web tools: a polyphonic DSP with an effect, for instance, comes as a `tgroup` with an Instrument tab and an Effect tab.
+faust-ui renders the UI description that the Faust compiler puts in a DSP's JSON (groups, sliders, knobs, menus, bargraphs…) as DOM components, and connects them to the DSP. It is published on npm as `@grame/faust-ui` (formerly `@shren/faust-ui`) and used by faustwasm and the Faust web tools: a polyphonic DSP with an effect, for instance, comes as a `tgroup` with an Instrument tab and an Effect tab.
 
 ## Repository layout
 
@@ -32,7 +32,7 @@ npm test                          # unit and browser tests
 npm run coverage                  # the same, with a coverage report in ./coverage
 ```
 
-The README mentions `npm run dist` and `npm run update`, but these scripts do not exist. CI (`.github/workflows/test.yml`) runs `npm ci` and `npm run coverage` on Node 22.
+`npm publish` runs `prepublishOnly` (tests, then build); only `dist/` is published (`files`). CI (`.github/workflows/test.yml`) runs `npm ci` and `npm run coverage` on Node 22.
 
 ## Code style
 

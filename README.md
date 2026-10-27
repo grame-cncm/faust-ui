@@ -111,6 +111,15 @@ The UI rendering is also done in 4 phases:
 
 A more detailed description of UI component class can be found in `./src/components/Component.ts`
 
+## Installing
+FaustUI is published on npm as `@grame/faust-ui`:
+
+```bash
+npm install @grame/faust-ui
+```
+
+The package holds the built files only: `dist/index.js` (UMD, styles included), `dist/esm/index.js` with `dist/esm/index.css` (ES module), `dist/index.d.ts` (types) and `dist/index.html` (a page that instantiates FaustUI in a window or an iframe). The types refer to those of `@grame/faustwasm`, an optional peer dependency: install it to type-check code that uses FaustUI.
+
 ## Building
 Install dev dependencies:
 
@@ -118,17 +127,12 @@ Install dev dependencies:
 npm install
 ```
 
-If you don't want to build the minified js for testing purpose:
+Build the UMD and ES module bundles and the types into `./dist`:
 
 ```bash
 npm run build
 ```
 
-Otherwise use:
-
-```bash
-npm run dist
-```
 To test, put the directory in a local server, then open the following page: `./dist/test.html`
 
 ## Testing
@@ -154,6 +158,12 @@ npm run coverage
 
 GitHub Actions runs them with the coverage report on each push to `master` and on each pull request (`./.github/workflows/test.yml`).
 
-## Versioning 
-You'll have to raise the package version number in `package.json` for `npm run update` to properly work.
+## Versioning
+Raise the version number in `package.json`, commit, then publish:
+
+```bash
+npm publish
+```
+
+`prepublishOnly` runs the tests and builds `./dist` first, so a failing test stops the publication. The package is public in the `@grame` scope (`publishConfig.access`).
 
